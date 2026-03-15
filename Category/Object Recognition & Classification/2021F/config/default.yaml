@@ -1,0 +1,45 @@
+# 智能送药车默认参数（可按场地标定修改）
+
+# 循线 PID
+line_follow:
+  kp: 0.5
+  ki: 0.0
+  kd: 0.1
+  base_speed: 0.5
+  max_diff: 0.4
+
+# 停靠
+docking:
+  slow_speed: 0.2
+  min_speed: 0.05
+  stop_threshold_cm: 2.0
+
+# 视觉 - 红色停止线 HSV（OpenCV: H 0-180, S/V 0-255）
+marker:
+  red_hsv_low1: [0, 100, 100]
+  red_hsv_high1: [10, 255, 255]
+  red_hsv_low2: [170, 100, 100]
+  red_hsv_high2: [180, 255, 255]
+  min_area: 500
+
+# 房号 ROI（占画面比例或像素），根据摄像头安装位置调整
+room_number:
+  roi: [0.3, 0.2, 0.4, 0.3]  # x, y, w, h 比例
+
+# 路口判定：至少几路为黑视为路口
+junction:
+  black_threshold: 3
+
+# 摄像头（香橙派 USB 一般为 0）
+camera:
+  device: 0
+  width: 640
+  height: 480
+
+# GPIO（香橙派 BCM 编号，需根据实际接线修改）
+gpio:
+  line_sensor_pins: [7, 11, 13, 15, 19]
+  motor_left_pwm: 12
+  motor_left_dir: 16
+  motor_right_pwm: 18
+  motor_right_dir: 22

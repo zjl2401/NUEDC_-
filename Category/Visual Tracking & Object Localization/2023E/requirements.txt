@@ -1,0 +1,6 @@
+opencv-python>=4.5.0
+numpy>=1.19.0
+
+# 香橙派上安装 GPIO（二选一，依镜像而定）：
+# pip install RPi.GPIO
+# 或 香橙派官方：pip install OrangePi.GPIO

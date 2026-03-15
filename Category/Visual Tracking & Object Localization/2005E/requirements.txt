@@ -1,0 +1,6 @@
+# 2005 E题 悬挂运动控制系统
+# 香橙派 / PC 通用，纯软件模拟仅需 opencv + numpy
+opencv-python>=4.5.0
+numpy>=1.19.0
+# 香橙派上如需 GPIO（可选）：
+# gpiod  # 或根据具体板型安装 orangepi GPIO 库
