@@ -1,0 +1,16 @@
+{
+  "folders": [
+    {
+      "path": ".",
+      "name": "NUEDC"
+    },
+    {
+      "path": "3UAV Navigation Firefighting in Complex Environments/2017C",
+      "name": "2017C-四旋翼探测跟踪"
+    }
+  ],
+  "settings": {
+    "files.exclude": {},
+    "explorer.sortOrder": "type"
+  }
+}
