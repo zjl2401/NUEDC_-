@@ -1,0 +1,26 @@
+# 2021D 基于互联网的摄像机入侵检测系统 - 配置
+
+# 检测参数
+detection:
+  min_area: 500        # 判定为入侵的最小轮廓面积（像素）
+  threshold: 25        # 背景减法的二值化阈值
+  blur_ksize: 5        # 高斯模糊核大小（奇数），用于降噪
+  history: 500         # 背景建模历史帧数
+  var_threshold: 16    # MOG2 方差阈值
+
+# 可选：检测区域 ROI [x, y, w, h]，留空表示全图
+# roi: [100, 100, 400, 300]
+roi: null
+
+# 告警
+alert:
+  # 连续多少帧检测到运动才触发一次告警（防抖动）
+  trigger_frames: 3
+  # 同一告警冷却时间（秒），避免重复上报
+  cooldown_seconds: 10.0
+
+# 网络上报（模拟“基于互联网”）
+network:
+  enabled: false
+  url: "http://localhost:8080/alert"   # 告警上报地址
+  timeout: 5

@@ -1,0 +1,3 @@
+# 2021G 植保飞行器 - 香橙派 + OpenCV 纯软件模拟
+opencv-python>=4.5.0
+numpy>=1.19.0
