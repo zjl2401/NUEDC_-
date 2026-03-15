@@ -15,7 +15,7 @@ import config
 def get_camera_matrix_and_distortion(
     calibration_dir: Optional[str] = None,
     image_size: Optional[Tuple[int, int]] = None,
-) -> Tuple[np.ndarray, np.ndarray]]:
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     获取相机内参矩阵 K 和畸变系数。
     若存在标定文件则加载，否则使用默认针孔近似。

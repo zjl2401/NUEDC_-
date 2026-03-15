@@ -9,8 +9,8 @@ try:
 except ImportError:
     cfg = None
 
-from ..vision import detect_fire_sources, FireDetectResult
-from ..comm import CommChannel, FireReport
+from vision import detect_fire_sources, FireDetectResult
+from comm import CommChannel, FireReport
 
 DETECT_INTERVAL = getattr(cfg, "UAV_DETECT_INTERVAL", 3) if cfg else 3
 

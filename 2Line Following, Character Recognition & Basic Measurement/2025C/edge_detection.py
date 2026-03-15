@@ -138,7 +138,7 @@ def detect_rectangles(
         box = cv2.boxPoints(rect)
         results.append({
             "contour": cnt,
-            "box_points": np.int0(box),
+            "box_points": np.asarray(box, dtype=np.int32),
             "center": (float(cx), float(cy)),
             "width_px": max(w, h),
             "height_px": min(w, h),

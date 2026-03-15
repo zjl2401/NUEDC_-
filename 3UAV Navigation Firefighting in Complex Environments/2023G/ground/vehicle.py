@@ -11,8 +11,8 @@ try:
 except ImportError:
     cfg = None
 
-from ..comm import CommChannel, FireReport
-from ..scene import ObstacleGrid
+from comm import CommChannel, FireReport
+from scene import ObstacleGrid
 
 SPEED = getattr(cfg, "VEHICLE_SPEED", 3.0) if cfg else 3.0
 RADIUS = getattr(cfg, "VEHICLE_RADIUS", 12) if cfg else 12
