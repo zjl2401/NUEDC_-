@@ -121,6 +121,7 @@ def run_measurement(
         rr["center_px"] = c
         rr["width_px"] = wp
         rr["height_px"] = hp
+        rr["box_points"] = rect["box_points"]
         rect_results.append(rr)
 
     results = {"circles": circle_results, "rectangles": rect_results}
