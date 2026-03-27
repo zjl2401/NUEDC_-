@@ -27,12 +27,16 @@ def main() -> None:
     parser.add_argument("--cam", type=int, default=cfg.CAM_INDEX, help="摄像头设备号（默认 0）")
     parser.add_argument("--video", type=str, default=None, help="使用视频文件代替摄像头（纯软件）")
     parser.add_argument("--simulate", action="store_true", help="使用合成场景，无需摄像头与视频")
+    parser.add_argument("--real", action="store_true", help="强制实时摄像头模式（忽略 --video/--simulate）")
     parser.add_argument("--width", type=int, default=cfg.PROC_WIDTH, help="处理宽度")
     parser.add_argument("--height", type=int, default=cfg.PROC_HEIGHT, help="处理高度")
     parser.add_argument("--no-show", action="store_true", help="不显示窗口（无屏/SSH 时省电）")
     parser.add_argument("--max-frames", type=int, default=None, help="最多处理帧数，默认无限")
     parser.add_argument("--delay", type=int, default=30, help="模拟时每帧延迟 ms（--simulate/--video）")
     args = parser.parse_args()
+    if args.real:
+        args.simulate = False
+        args.video = None
 
     perception = WildlifePerception(
         cam_index=args.video if args.video else args.cam,
