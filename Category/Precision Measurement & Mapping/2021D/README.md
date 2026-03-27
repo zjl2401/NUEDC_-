@@ -27,11 +27,17 @@ pip install -r requirements.txt
 # 使用默认摄像头（0）运行
 python main.py
 
+# 强制实机摄像头模式（source 当摄像头索引）
+python main.py --real --source 0
+
 # 使用视频文件模拟摄像头
 python main.py --source video.mp4
 
 # 指定摄像头索引（如 USB 摄像头为 1）
 python main.py --source 1
+
+# 保存检测结果视频
+python main.py --real --source 0 --save-video out.mp4
 ```
 
 ## 配置说明
@@ -75,3 +81,10 @@ python main.py --source 0
 ```
 
 若内存或算力紧张，可在 `config.yaml` 中降低分辨率或减小检测区域。
+
+## 实机硬件清单
+
+- Orange Pi / 树莓派
+- USB 摄像头（定点安装）
+- 网络连接（可选，用于 HTTP 告警上报）
+- 可选蜂鸣器/警示灯（本地告警扩展）
