@@ -44,6 +44,9 @@ python main.py
 # 指定摄像头、分辨率，不显示窗口（SSH/无屏低功耗）
 python main.py --cam 0 --width 640 --height 480 --no-show
 
+# 强制实机摄像头模式（忽略 --video/--simulate）
+python main.py --real --cam 0
+
 # 只处理 500 帧（测试）
 python main.py --max-frames 500
 ```
@@ -84,3 +87,12 @@ python main.py --video test.mp4 --max-frames 500 --no-show
 
 - 当前输出：每帧得到**目标框列表** `[( (x,y,w,h), area, is_small_target ), ...]`，可在 `main.py` 的 `on_detection` 中接入报警、录像、云台跟踪等。
 - 若需更强“动物形态”区分，可在 `vision/detector.py` 后接 HOG+SVM 或轻量级 CNN 分类（需在嵌入式端做模型量化与推理优化以控制功耗）。
+
+## 实机硬件与配置步骤
+
+- **硬件**：Orange Pi + USB/CSI 摄像头 + 稳定供电（可选云台/录像存储）。
+- **步骤**：
+  1. `pip install -r requirements.txt`，确认 `python main.py --real --cam 0` 可打开画面；
+  2. 光照复杂时优先调 `BG_SUBTRACTOR`、`MOG2_VAR_THRESHOLD`、`MORPH_OPEN/CLOSE`；
+  3. 目标太小时提高分辨率并调 `MIN_BBOX_SIDE`/`SMALL_TARGET_AREA_THRESH`；
+  4. 无屏部署建议 `--no-show`，将 `on_detection` 接入串口/网络上报。
