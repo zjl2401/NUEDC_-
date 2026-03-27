@@ -85,7 +85,7 @@ def run_state_machine(
     if frame is not None:
         roi_ratio = cfg.get("room_number", {}).get("roi")
         if roi_ratio:
-            current_room, room_conf = recognize_room_number(frame, roi=None)
+            current_room, room_conf = recognize_room_number(frame, roi=tuple(roi_ratio))
         else:
             current_room, room_conf = recognize_room_number(frame, roi=None)
         stop_detected, stop_score = detect_stop_marker(frame, roi=None)
@@ -304,6 +304,7 @@ def main_loop(
     loop_hz: float = 50,
     use_sim: bool = False,
     show_sim_window: bool = True,
+    enable_mock_hal: bool = True,
 ) -> None:
     """主循环：加载配置、初始化摄像头与视觉（或仿真）、运行状态机。"""
     load_config()
@@ -320,6 +321,10 @@ def main_loop(
         hal_motor.set_simulator(sim)
         hal_camera.set_simulator(sim)
     else:
+        from src.hal import sensor as hal_sensor
+        from src.hal import motor as hal_motor
+        hal_sensor.set_mock_mode(enable_mock_hal)
+        hal_motor.set_mock_mode(enable_mock_hal)
         cam_cfg = cfg.get("camera", {})
         if use_camera:
             ok = init_camera(
