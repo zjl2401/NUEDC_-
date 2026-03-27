@@ -42,6 +42,14 @@ class SimulateFlightInterface(FlightInterface):
         return self._armed
 
 
-def create_flight_interface(use_simulate=None):
+def create_flight_interface(use_simulate=None, connection_string=None, baud=None):
+    """
+    use_simulate=True：仅打印指令，不接飞控。
+    use_simulate=False：通过 MAVLink 连接实机（需 pymavlink），见 config 与 README。
+    """
     sim = use_simulate if use_simulate is not None else getattr(cfg, "FLIGHT_SIMULATE", True)
-    return SimulateFlightInterface()
+    if sim:
+        return SimulateFlightInterface()
+    from flight.mavlink_real import MavlinkFlightInterface
+
+    return MavlinkFlightInterface(connection_string=connection_string, baud=baud)
