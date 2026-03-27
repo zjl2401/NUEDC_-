@@ -32,12 +32,23 @@ class State(Enum):
     DONE = "done"
 
 
-def run_full_mission(use_simulate_flight=True, skip_takeoff_land=False, show_window=True):
-    flight = create_flight_interface(use_simulate=use_simulate_flight)
-    cap = open_camera()
+def run_full_mission(
+    use_simulate_flight=True,
+    skip_takeoff_land=False,
+    show_window=True,
+    camera_index=None,
+    connection_string=None,
+    baud=None,
+):
+    cap = open_camera(camera_index if camera_index is not None else cfg.CAMERA_INDEX)
     if not cap.isOpened():
         print("摄像头打开失败")
         return
+    flight = create_flight_interface(
+        use_simulate=use_simulate_flight,
+        connection_string=connection_string,
+        baud=baud,
+    )
     state = State.IDLE
     track_pid = TrackPIDController()
     moving_tracker = MovingTargetTracker()
@@ -108,11 +119,13 @@ def run_full_mission(use_simulate_flight=True, skip_takeoff_land=False, show_win
     finally:
         cap.release()
         cv2.destroyAllWindows()
+        if hasattr(flight, "close"):
+            flight.close()
     print("任务结束")
 
 
-def run_vision_only(mode="search"):
-    cap = open_camera()
+def run_vision_only(mode="search", camera_index=None):
+    cap = open_camera(camera_index if camera_index is not None else cfg.CAMERA_INDEX)
     if not cap.isOpened():
         print("摄像头打开失败")
         return
@@ -142,13 +155,23 @@ def main():
     parser = argparse.ArgumentParser(description="2017C 四旋翼探测跟踪")
     parser.add_argument("--mode", choices=["full", "vision", "simulate"], default="vision")
     parser.add_argument("--vision-mode", choices=["search", "track", "air"], default="track")
-    parser.add_argument("--simulate", action="store_true", default=True)
-    parser.add_argument("--no-simulate", action="store_false", dest="simulate")
+    parser.add_argument("--simulate", action="store_true", dest="simulate", help="飞控使用模拟接口")
+    parser.add_argument("--no-simulate", action="store_false", dest="simulate", help="飞控使用实机接口")
+    parser.set_defaults(simulate=getattr(cfg, "FLIGHT_SIMULATE", True))
     parser.add_argument("--skip-flight", action="store_true")
     parser.add_argument("--no-window", action="store_true")
     parser.add_argument("--sim-track", choices=["circle", "figure8"], default="circle")
     parser.add_argument("--sim-track-only", action="store_true")
+    parser.add_argument("--real", action="store_true", help="实机飞控（MAVLink），需 pymavlink 与串口/UDP")
+    parser.add_argument("--camera-index", type=int, default=None, help="摄像头索引（默认 config.CAMERA_INDEX）")
+    parser.add_argument("--connection", type=str, default=None, help="MAVLink 连接串，如 udp:127.0.0.1:14550 或 COM3")
+    parser.add_argument("--baud", type=int, default=None, help="串口波特率（默认 config.FLIGHT_BAUD）")
     args = parser.parse_args()
+
+    if args.real:
+        args.simulate = False
+
+    cam_idx = args.camera_index if args.camera_index is not None else cfg.CAMERA_INDEX
 
     if args.mode == "simulate":
         from simulate import run_simulate_full_mission, run_simulate_track_only
@@ -158,9 +181,16 @@ def main():
             run_simulate_full_mission(track_trajectory=args.sim_track, show_window=not args.no_window)
         return
     if args.mode == "vision":
-        run_vision_only(args.vision_mode)
+        run_vision_only(args.vision_mode, camera_index=cam_idx)
         return
-    run_full_mission(use_simulate_flight=args.simulate, skip_takeoff_land=args.skip_flight, show_window=not args.no_window)
+    run_full_mission(
+        use_simulate_flight=args.simulate,
+        skip_takeoff_land=args.skip_flight,
+        show_window=not args.no_window,
+        camera_index=cam_idx,
+        connection_string=args.connection,
+        baud=args.baud,
+    )
 
 
 if __name__ == "__main__":
