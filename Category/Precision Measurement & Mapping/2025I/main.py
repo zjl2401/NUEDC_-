@@ -17,6 +17,10 @@ import config as cfg
 from vision import HandDetector, HandState
 from control_mapper import ControlMapper, draw_control_panel_overlay
 from simulate import synthetic_frame_generator, video_file_generator
+try:
+    import serial
+except ImportError:
+    serial = None
 
 logging.basicConfig(
     level=getattr(logging, getattr(cfg, "LOG_LEVEL", "INFO")),
@@ -36,16 +40,36 @@ def main() -> None:
     parser.add_argument("--max-frames", type=int, default=None, help="最多处理帧数，默认无限")
     parser.add_argument("--delay", type=int, default=30, help="模拟时每帧延迟 ms（--simulate/--video）")
     parser.add_argument("--show-mask", action="store_true", help="显示肤色二值图")
+    parser.add_argument("--serial", type=str, default=None, help="串口输出控制量，如 COM3 或 /dev/ttyUSB0")
+    parser.add_argument("--baud", type=int, default=115200, help="串口波特率")
     args = parser.parse_args()
 
     detector = HandDetector()
     mapper = ControlMapper(width=args.width, height=args.height)
     show = not args.no_show
     show_mask = args.show_mask or getattr(cfg, "SHOW_SKIN_MASK", False)
+    ser = None
+    if args.serial:
+        if serial is None:
+            logger.error("未安装 pyserial，无法启用串口输出。请执行: pip install pyserial")
+            return
+        try:
+            ser = serial.Serial(args.serial, args.baud, timeout=0.05)
+            logger.info("串口输出已开启: %s @ %d", args.serial, args.baud)
+        except Exception as e:
+            logger.error("串口打开失败: %s", e)
+            return
 
     def run_one_frame(frame, classify_gesture=True):
         center, state, contour, skin_mask = detector.process(frame, classify_gesture=classify_gesture)
         nx, ny = mapper.update(center, state)
+        if ser is not None:
+            # 输出格式：nx,ny,state\n，便于 MCU 解析
+            line = f"{nx:.3f},{ny:.3f},{state.value}\n"
+            try:
+                ser.write(line.encode("utf-8"))
+            except Exception:
+                pass
         vis = draw_control_panel_overlay(frame, nx, ny, state)
         if contour is not None:
             cv2.drawContours(vis, [contour], -1, (0, 255, 255), 2)
@@ -125,6 +149,11 @@ def main() -> None:
                 cv2.destroyAllWindows()
 
     elapsed = time.perf_counter() - t0
+    if ser is not None:
+        try:
+            ser.close()
+        except Exception:
+            pass
     logger.info("运行结束, 耗时 %.1f s, 帧数 %d", elapsed, n)
 
 
