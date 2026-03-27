@@ -25,12 +25,16 @@ def load_config(config_path: str = "config.yaml") -> dict:
 def main():
     parser = argparse.ArgumentParser(description="基于互联网的摄像机入侵检测系统（纯软件模拟）")
     parser.add_argument("--source", default="0", help="摄像头索引(0/1)或视频文件路径")
+    parser.add_argument("--real", action="store_true", help="强制摄像头模式（source 视为摄像头索引）")
     parser.add_argument("--config", default="config.yaml", help="配置文件路径")
     parser.add_argument("--no-display", action="store_true", help="不显示窗口（无头运行）")
+    parser.add_argument("--save-video", default=None, help="保存检测结果视频路径（可选）")
     args = parser.parse_args()
 
     source = args.source
-    if source.isdigit():
+    if args.real and not str(source).isdigit():
+        source = "0"
+    if str(source).isdigit():
         source = int(source)
 
     cfg = load_config(args.config)
@@ -58,6 +62,7 @@ def main():
 
     cap = open_source(source)
     display = not args.no_display
+    writer = None
 
     print("启动入侵检测，按 'q' 退出。")
     try:
@@ -80,8 +85,20 @@ def main():
                 cv2.imshow("2021D Intrusion Detection", frame_out)
                 if cv2.waitKey(1) & 0xFF == ord("q"):
                     break
+            if args.save_video:
+                if writer is None:
+                    h, w = frame_out.shape[:2]
+                    writer = cv2.VideoWriter(
+                        args.save_video,
+                        cv2.VideoWriter_fourcc(*"mp4v"),
+                        20.0,
+                        (w, h),
+                    )
+                writer.write(frame_out)
     finally:
         cap.release()
+        if writer is not None:
+            writer.release()
         if display:
             cv2.destroyAllWindows()
     print("已退出。")
