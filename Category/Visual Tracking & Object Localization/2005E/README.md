@@ -56,7 +56,50 @@ python simulator.py --demo --animate
 python simulator.py --no-sim
 ```
 
-### 四、仍建议你后续补的“工程化能力”
+### 四、实机硬件清单
+
+- Orange Pi / Raspberry Pi（1 路上位机控制）
+- 步进电机 x2（左右卷线）
+- 步进驱动器 x2（支持 STEP/DIR/EN，例如 A4988/TMC 系）
+- 稳定电源（按电机规格选型，建议电机电源与主控分供）
+- 悬挂线轮与拉线机构（左右对称安装）
+- 连接线、限位开关（推荐）
+
+### 五、实机接线与配置操作（推荐顺序）
+
+1. **接线**
+   - 主控 GPIO -> 驱动器 `STEP/DIR/EN`；
+   - 驱动器 -> 步进电机；
+   - 主控 GND 与驱动器 GND 共地；
+   - 若使用 EN，引脚可在命令行传入 `--left-en-pin/--right-en-pin`。
+2. **先用默认参数点动验证**
+   - `python simulator.py --no-sim --demo --animate`
+   - 观察两侧电机是否都转动。
+3. **方向修正**
+   - 方向反了就加 `--invert-left-dir` 或 `--invert-right-dir`。
+4. **步距标定**
+   - 先测电机转固定步数对应拉线长度，换算 `steps_per_cm`；
+   - 运行时传参：`--steps-per-cm 58.3`（示例）。
+5. **速度调参**
+   - 从低速开始（如 `--max-speed 120`），逐步提高，避免丢步。
+6. **引脚固化**
+   - 按你的板子 BOARD 引脚图，把 STEP/DIR/EN 配置为固定值后再跑完整轨迹。
+
+### 六、实机命令示例
+
+```bash
+# 1) 最小实机验证（默认引脚）
+python simulator.py --no-sim --demo --animate
+
+# 2) 自定义引脚 + 机械参数
+python simulator.py --no-sim --steps-per-cm 58.3 --max-speed 180 \
+  --left-step-pin 31 --left-dir-pin 33 --right-step-pin 35 --right-dir-pin 37
+
+# 3) 一侧方向反转（常见于左右电机安装镜像）
+python simulator.py --no-sim --invert-right-dir
+```
+
+### 七、仍建议你后续补的“工程化能力”
 
 - 回零/限位开关：上电标定初始长度，否则 L1/L2 不可信
 - 加减速规划：梯形/S 曲线，减少丢步
