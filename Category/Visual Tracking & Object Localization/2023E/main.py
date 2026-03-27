@@ -32,15 +32,20 @@ def angle_from_delta(current_pan: float, current_tilt: float, delta_pan: float, 
     return (pan, tilt)
 
 
-def run_reset(servo, vision: VisionPipeline) -> None:
-    """复位：绿点对准屏幕中心。"""
-    print("模式: 复位对齐（绿点 -> 屏幕中心）")
-    ctrl = TrackerController()
-    cap = cv2.VideoCapture(cfg.CAMERA_INDEX)
+def _open_camera(camera_index: int):
+    cap = cv2.VideoCapture(camera_index)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, cfg.FRAME_WIDTH)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, cfg.FRAME_HEIGHT)
     if hasattr(cv2, "CAP_PROP_EXPOSURE"):
         cap.set(cv2.CAP_PROP_EXPOSURE, cfg.EXPOSURE)
+    return cap
+
+
+def run_reset(servo, vision: VisionPipeline, camera_index: int) -> None:
+    """复位：绿点对准屏幕中心。"""
+    print("模式: 复位对齐（绿点 -> 屏幕中心）")
+    ctrl = TrackerController()
+    cap = _open_camera(camera_index)
     last_angle = (cfg.PAN_CENTER, cfg.TILT_CENTER)
     while True:
         ret, frame = cap.read()
@@ -64,16 +69,12 @@ def run_reset(servo, vision: VisionPipeline) -> None:
     cv2.destroyAllWindows()
 
 
-def run_track(servo, vision: VisionPipeline, use_predict: bool) -> None:
+def run_track(servo, vision: VisionPipeline, use_predict: bool, camera_index: int) -> None:
     """定点/动态追踪：绿点追红点。"""
     print("模式: 动态追踪" if use_predict else "模式: 定点追踪")
     ctrl = TrackerController()
     predictor = VelocityPredictor() if use_predict else None
-    cap = cv2.VideoCapture(cfg.CAMERA_INDEX)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, cfg.FRAME_WIDTH)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, cfg.FRAME_HEIGHT)
-    if hasattr(cv2, "CAP_PROP_EXPOSURE"):
-        cap.set(cv2.CAP_PROP_EXPOSURE, cfg.EXPOSURE)
+    cap = _open_camera(camera_index)
     last_angle = (cfg.PAN_CENTER, cfg.TILT_CENTER)
     target_xy = None
     while True:
@@ -191,14 +192,12 @@ def run_simulate_circle(radius: float = 120, speed: float = 0.12) -> None:
     cv2.destroyAllWindows()
 
 
-def run_scan_circle(servo, vision: VisionPipeline, radius: float = 80, speed: float = 0.15) -> None:
+def run_scan_circle(
+    servo, vision: VisionPipeline, camera_index: int, radius: float = 80, speed: float = 0.15
+) -> None:
     """自主画圈：沿黑框内切圆轨迹运动。"""
     print("模式: 自主画圈")
-    cap = cv2.VideoCapture(cfg.CAMERA_INDEX)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, cfg.FRAME_WIDTH)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, cfg.FRAME_HEIGHT)
-    if hasattr(cv2, "CAP_PROP_EXPOSURE"):
-        cap.set(cv2.CAP_PROP_EXPOSURE, cfg.EXPOSURE)
+    cap = _open_camera(camera_index)
     cx, cy = cfg.SCREEN_W / 2, cfg.SCREEN_H / 2
     t0 = time.time()
     while True:
@@ -226,6 +225,9 @@ def main():
     parser.add_argument("--dummy", action="store_true", help="不接舵机，仅打印角度")
     parser.add_argument("--simulate", action="store_true",
                         help="纯软件模拟：无需摄像头和舵机，红/绿点用程序绘制看效果")
+    parser.add_argument("--camera-index", type=int, default=cfg.CAMERA_INDEX, help="摄像头索引")
+    parser.add_argument("--pan-pin", type=int, default=7, help="云台水平舵机 BOARD 引脚")
+    parser.add_argument("--tilt-pin", type=int, default=11, help="云台俯仰舵机 BOARD 引脚")
     args = parser.parse_args()
 
     if args.simulate:
@@ -240,17 +242,17 @@ def main():
         print("退出。")
         return
 
-    servo = create_servo(use_dummy=args.dummy)
+    servo = create_servo(use_dummy=args.dummy, pan_pin=args.pan_pin, tilt_pin=args.tilt_pin)
     vision = VisionPipeline(use_perspective=not args.no_perspective)
 
     if args.mode == "reset":
-        run_reset(servo, vision)
+        run_reset(servo, vision, camera_index=args.camera_index)
     elif args.mode == "track":
-        run_track(servo, vision, use_predict=False)
+        run_track(servo, vision, use_predict=False, camera_index=args.camera_index)
     elif args.mode == "dynamic":
-        run_track(servo, vision, use_predict=True)
+        run_track(servo, vision, use_predict=True, camera_index=args.camera_index)
     elif args.mode == "circle":
-        run_scan_circle(servo, vision)
+        run_scan_circle(servo, vision, camera_index=args.camera_index)
 
     servo.set_center()
     print("退出。")
