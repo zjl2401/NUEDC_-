@@ -1,4 +1,4 @@
-# 2025E 视觉闭环控制 - 纯软件模拟
+# 2025E 视觉闭环控制（仿真/真机）
 
 基于对 2025 年电赛 E 题的预测（**基于视觉反馈的复杂环境运动控制系统**），本仓库在 **Orange Pi RK3588 + OpenCV** 技术栈下实现**纯软件模拟**，覆盖三大核心挑战：
 
@@ -15,7 +15,7 @@
 pip install -r requirements.txt
 ```
 
-## 运行方式
+## 运行方式（仿真）
 
 ```bash
 # 多目标切换（默认）：红/绿/蓝/黄多 blob，按键 1–4 切换锁定目标
@@ -30,6 +30,45 @@ python main.py --mode dynamic
 
 可选 `--no-kalman` 关闭 Kalman 预测，观察遮挡时轨迹抖动差异。
 
+## 运行方式（真机：摄像头 + 云台/舵机）
+
+本目录已补齐真机入口（不影响原有仿真模式），通过 `--real` 启动：
+
+```bash
+# 真机多目标切换：按键 1-4 锁定不同颜色目标
+python main.py --mode multi --real
+
+# 真机动态追踪：始终追红色
+python main.py --mode dynamic --real
+
+# 真机复位回中 + （可选）透视标定（黑框）
+python main.py --mode reset --real
+
+# 真机但不接舵机/无 GPIO：只打印角度（或无 GPIO 会自动 dummy）
+python main.py --mode dynamic --real --dummy
+```
+
+真机调通通常需要先在 `config.py` 里完成标定：
+
+- **摄像头**：`CAMERA_INDEX`、`FRAME_WIDTH/FRAME_HEIGHT`、`EXPOSURE`
+- **舵机中心与范围**：`PAN_CENTER/TILT_CENTER`、`PAN_MIN/MAX`、`TILT_MIN/MAX`
+- **像素→角度映射**：`PIXEL_TO_PAN`、`PIXEL_TO_TILT`（方向不对就取反）
+
+> 提示：`--mode lissajous` 主要用于纯软件验证控制性能，真机更建议用 `multi` 或 `dynamic`。
+
+### 真机增强选项（已补齐）
+
+- **透视矫正（黑框标定）**
+  - 默认开启（`config.py` 里的 `USE_PERSPECTIVE=True`），真机运行时可按 `C` 重新标定
+  - 如不需要：加 `--no-perspective`
+- **ROI 加速**
+  - 默认开启（`ROI_ENABLED=True`），锁定目标后只在局部区域检测以提速稳帧
+  - 如需关闭：加 `--no-roi`
+- **串口输出（可选）**
+  - 依赖：`pip install pyserial`
+  - 运行：`python main.py --mode dynamic --real --serial COM3 --baud 115200`
+  - 输出内容：`pan/tilt` 与目标相对中心的误差 `ex/ey`（便于单片机/飞控使用）
+
 ## 模块说明
 
 | 文件 | 说明 |
@@ -42,7 +81,7 @@ python main.py --mode dynamic
 
 ## 与真实硬件对接
 
-- **摄像头**：将 `sim_env.step()` 替换为 `cv2.VideoCapture.read()`，即可用真实画面做多目标检测。  
-- **云台/小车**：将 `main.py` 中 `follower_x/y` 的更新改为舵机角度或底盘速度，并增加 `config` 中像素–角度/速度的标定即可。  
+- **摄像头**：已在 `main.py --real` 中接入 `cv2.VideoCapture.read()`。  
+- **云台/小车**：已在 `main.py --real` 中将像素误差映射为舵机角度增量（需标定 `PIXEL_TO_PAN/TILT`）。  
 
-本仓库为纯软件仿真，便于在无硬件条件下验证算法与参数。
+本目录同时支持纯软件仿真与真机运行，便于在无硬件条件下先验证算法，再上板调通闭环。
