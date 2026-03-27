@@ -36,6 +36,9 @@ python main.py
 python main.py --width 640 --height 480 --show-mask   # 显示肤色二值图
 python main.py --simulate --max-frames 300 --delay 40
 python main.py --no-show   # 无屏/SSH 时不弹窗
+
+# 实机串口输出控制量给 MCU（输出: nx,ny,state）
+python main.py --cam 0 --serial COM3 --baud 115200
 ```
 
 ## 项目结构
@@ -65,3 +68,13 @@ python main.py --no-show   # 无屏/SSH 时不弹窗
 - 将 `(nx, ny)` 接到真实设备：屏幕光标、舵机角度、参数滑块等。
 - 握拳/张开作为“确认/取消”或模式切换。
 - 若香橙派性能允许，可接入 MediaPipe 手部关键点做更细手势（如捏合、旋转）。
+
+## 实机硬件与配置步骤
+
+- **硬件清单**：Orange Pi/树莓派、USB 摄像头、下位机 MCU（可选）、串口线（可选）。
+- **配置步骤**：
+  1. `pip install -r requirements.txt`（已包含 `pyserial`）；
+  2. 先用 `python main.py --cam 0 --show-mask` 调整拍摄位置与光照；
+  3. 肤色阈值不稳时微调 `config.py` 的 `SKIN_*` 与 `MIN_HAND_AREA`；
+  4. 对接 MCU 时使用 `--serial`，下位机按 `nx,ny,state` 行协议解析；
+  5. 通过 `MAP_DEADZONE`、`MAP_SMOOTH` 调手感（稳态抖动 vs 响应速度）。
