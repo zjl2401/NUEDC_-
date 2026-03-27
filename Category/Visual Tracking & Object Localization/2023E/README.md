@@ -18,7 +18,7 @@
 ## 安装
 
 ```bash
-cd 2023E运动目标控制与自动追踪系统
+cd "Category/Visual Tracking & Object Localization/2023E"
 pip install -r requirements.txt
 # 香橙派上：
 # sudo pip3 install RPi.GPIO  或  sudo pip3 install OrangePi.GPIO
@@ -49,7 +49,40 @@ python main.py --mode circle --simulate
 
 # 不做透视校正（摄像头正对屏幕时可用）
 python main.py --mode track --no-perspective
+
+# 指定实机参数：摄像头索引 + 舵机引脚（BOARD 编号）
+python main.py --mode dynamic --camera-index 0 --pan-pin 7 --tilt-pin 11
 ```
+
+## 实机硬件清单
+
+- Orange Pi / Raspberry Pi（推荐 Orange Pi）
+- USB 摄像头（支持 OpenCV 读取）
+- 二自由度云台 + 2 个 180° 舵机（常见 SG90/MG90S）
+- 激光模块（绿光）+ 目标激光（红光）
+- 独立 5V 舵机电源（建议 >=2A）+ 共地连接线
+- 若干杜邦线、固定支架
+
+## 实机接线与配置步骤
+
+1. **接线**
+   - 舵机信号线接 `--pan-pin/--tilt-pin` 对应 BOARD 引脚。
+   - 舵机电源使用独立 5V，不要直接由板载 GPIO 供电。
+   - 舵机电源地与开发板 GND 必须共地。
+2. **安装依赖**
+   - `pip install -r requirements.txt`
+   - Orange Pi 上安装 GPIO 库：`sudo pip3 install RPi.GPIO` 或 `sudo pip3 install OrangePi.GPIO`
+3. **摄像头确认**
+   - 先试 `--camera-index 0`，黑屏时改为 `1/2`。
+4. **舵机中心标定**
+   - 运行 `python main.py --mode reset --camera-index 0 --pan-pin 7 --tilt-pin 11`
+   - 调整 `config.py` 的 `PAN_CENTER/TILT_CENTER` 使绿点回屏幕中心。
+5. **比例标定**
+   - 调整 `SCREEN_TO_PAN/SCREEN_TO_TILT`，使像素误差到角度变化的响应合适、不过冲不过慢。
+6. **实机运行**
+   - 动态追踪：`python main.py --mode dynamic --camera-index 0 --pan-pin 7 --tilt-pin 11`
+   - 定点追踪：`python main.py --mode track --camera-index 0 --pan-pin 7 --tilt-pin 11`
+   - 自主画圈：`python main.py --mode circle --camera-index 0 --pan-pin 7 --tilt-pin 11`
 
 ## 配置
 
