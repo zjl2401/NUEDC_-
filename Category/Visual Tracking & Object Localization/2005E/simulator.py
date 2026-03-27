@@ -161,9 +161,42 @@ def main():
     parser.add_argument("--no-sim", action="store_false", dest="sim", help="接真实电机（香橙派）")
     parser.add_argument("--demo", action="store_true", help="自动演示：起点→点→直线→圆→正方形")
     parser.add_argument("--animate", action="store_true", help="演示时逐步动画显示（与 --demo 同用）")
+    parser.add_argument("--steps-per-cm", type=float, default=50.0, help="每厘米对应步数（机械标定）")
+    parser.add_argument("--max-speed", type=float, default=200.0, help="最大步频（steps/s）")
+    parser.add_argument("--left-step-pin", type=int, default=31, help="左电机 STEP（BOARD）")
+    parser.add_argument("--left-dir-pin", type=int, default=33, help="左电机 DIR（BOARD）")
+    parser.add_argument("--left-en-pin", type=int, default=None, help="左电机 EN（BOARD，可选）")
+    parser.add_argument("--right-step-pin", type=int, default=35, help="右电机 STEP（BOARD）")
+    parser.add_argument("--right-dir-pin", type=int, default=37, help="右电机 DIR（BOARD）")
+    parser.add_argument("--right-en-pin", type=int, default=None, help="右电机 EN（BOARD，可选）")
+    parser.add_argument("--invert-left-dir", action="store_true", help="反转左电机方向逻辑")
+    parser.add_argument("--invert-right-dir", action="store_true", help="反转右电机方向逻辑")
     args = parser.parse_args()
 
-    motor = MotorController(simulate=args.sim)
+    motor = MotorController(
+        simulate=args.sim,
+        steps_per_cm=args.steps_per_cm,
+        max_speed_steps_per_sec=args.max_speed,
+        left_step_pin=args.left_step_pin,
+        left_dir_pin=args.left_dir_pin,
+        left_en_pin=args.left_en_pin,
+        right_step_pin=args.right_step_pin,
+        right_dir_pin=args.right_dir_pin,
+        right_en_pin=args.right_en_pin,
+        left_dir_positive=not args.invert_left_dir,
+        right_dir_positive=not args.invert_right_dir,
+    )
+    if not args.sim:
+        print("[Real Mode] STEP/DIR config loaded:")
+        print(
+            f" L: STEP={args.left_step_pin} DIR={args.left_dir_pin} EN={args.left_en_pin} "
+            f"dir_positive={not args.invert_left_dir}"
+        )
+        print(
+            f" R: STEP={args.right_step_pin} DIR={args.right_dir_pin} EN={args.right_en_pin} "
+            f"dir_positive={not args.invert_right_dir}"
+        )
+        print(f" steps_per_cm={args.steps_per_cm}, max_speed={args.max_speed} steps/s")
     sim = SuspendedPenSimulator(motor)
 
     # 起始点：题目常规定为左下角附近，如 (10, 10) cm
