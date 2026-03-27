@@ -43,6 +43,18 @@ python main.py
 - **首次运行**：自动进入学习模式，对 1～7 号电器各采 5 段样本并保存模板到 `appliance_model.json`。
 - **识别模式**：窗口实时显示当前模拟的“在用电器”、识别结果、特征参量（I_rms、相位、功率因数、H3/H5/H7）及电流波形。
 
+### 实采样识别（CSV）
+
+当你有 ADC/示波器导出的电流数据（CSV）时，可直接走“实采样”识别：
+
+```bash
+# 单列: 电流(mA)，或两列: 电流(mA),电压(V)
+python main.py --csv samples/current_log.csv
+
+# 指定窗口与步长（秒）
+python main.py --csv samples/current_log.csv --window-s 0.2 --step-s 0.1 --no-window
+```
+
 ### 操作说明
 
 | 按键 | 功能 |
@@ -63,3 +75,10 @@ python main.py
 - 接入真实 ADC 采样（如通过香橙派 SPI/I2C 读取电流芯片）替换 `appliance_simulator` 的合成波形。
 - 多电器同时用电时，可增加分解算法（如 NILM）或更多特征以提高“随机增减电器”下的识别稳定性。
 - 界面需显示中文时，可用 OpenCV + PIL 绘制文字或改用 PyQt/Tk 等带中文支持的 GUI。
+
+## 实机硬件清单（建议）
+
+- 香橙派/树莓派
+- 电流采样模块（CT/霍尔 + ADC，如 ADS1115/INA219 等）
+- 可选电压采样通道（用于更稳相位/PF 估计）
+- 隔离电路与安全保护（强烈建议）
