@@ -62,7 +62,14 @@ SEARCH_YAW_STEP_DEG = 15
 SEARCH_YAW_LIMIT_DEG = 360
 SEARCH_TIMEOUT_S = 60
 
-# ============ 飞控 ============
+# ============ 飞控（MAVLink 实机） ============
+# 串口设备（Linux 常见 /dev/ttyUSB0；Windows 写 COM3）；若设置 FLIGHT_CONNECTION_STRING 则优先用它
 FLIGHT_SERIAL_PORT = "/dev/ttyS1"
 FLIGHT_BAUD = 57600
 FLIGHT_SIMULATE = True
+# 留空则使用 FLIGHT_SERIAL_PORT + FLIGHT_BAUD；也可填 udp:127.0.0.1:14550 等
+FLIGHT_CONNECTION_STRING = ""
+# PID 输出约 [-1,1]，乘以下系数得到机体系速度 (m/s)
+FLIGHT_VEL_MAX_MS = 0.5
+# yaw_rate 归一化后乘以下系数 (rad/s 量级，按实机再调)
+FLIGHT_YAW_RATE_RADS = 0.3
