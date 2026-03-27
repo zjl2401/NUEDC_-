@@ -27,6 +27,7 @@ def main():
     parser.add_argument("--sim", action="store_true", help="纯软件仿真模式（无需硬件，带可视化）")
     parser.add_argument("--no-sim-window", action="store_true", help="仿真时不弹出可视化窗口")
     parser.add_argument("--hz", type=float, default=50, help="主循环频率")
+    parser.add_argument("--real-hal", action="store_true", help="启用真实 HAL（关闭 mock，按实际硬件实现执行）")
     args = parser.parse_args()
     use_sim = args.sim
     main_loop(
@@ -35,6 +36,7 @@ def main():
         loop_hz=args.hz,
         use_sim=use_sim,
         show_sim_window=use_sim and not args.no_sim_window,
+        enable_mock_hal=not args.real_hal,
     )
 
 
