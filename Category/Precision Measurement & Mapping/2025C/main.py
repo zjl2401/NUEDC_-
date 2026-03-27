@@ -8,6 +8,7 @@ import os
 import sys
 import cv2
 import numpy as np
+import argparse
 import config
 from camera_calibration import get_camera_matrix_and_distortion
 from edge_detection import (
@@ -130,13 +131,25 @@ def run_measurement(
 
 
 def main():
-    """入口：从文件/摄像头读取，或使用仿真图。"""
+    """入口：文件测量 / 实时摄像头测量 / 仿真图测量。"""
+    parser = argparse.ArgumentParser(description="2025C 单目视觉目标测量")
+    parser.add_argument("image", nargs="?", default=None, help="输入图像路径（可选）")
+    parser.add_argument("--real", action="store_true", help="实时摄像头模式")
+    parser.add_argument("--cam", type=int, default=0, help="摄像头索引（实时模式）")
+    parser.add_argument("--width", type=int, default=640, help="实时模式采集宽度")
+    parser.add_argument("--height", type=int, default=480, help="实时模式采集高度")
+    parser.add_argument("--max-frames", type=int, default=None, help="实时模式最多处理帧数")
+    parser.add_argument("--plane-distance", type=float, default=config.DEFAULT_CAMERA_HEIGHT_M, help="测量平面距离（米）")
+    parser.add_argument("--save-dir", type=str, default=config.PROJECT_ROOT, help="结果保存目录")
+    args = parser.parse_args()
+
     os.makedirs(config.SAMPLE_IMAGES_DIR, exist_ok=True)
     os.makedirs(config.CALIBRATION_DIR, exist_ok=True)
+    os.makedirs(args.save_dir, exist_ok=True)
 
     # 1) 若命令行给图像路径，则对该图测量
-    if len(sys.argv) > 1:
-        path = sys.argv[1]
+    if args.image:
+        path = args.image
         if not os.path.isfile(path):
             print(f"文件不存在: {path}")
             return
@@ -146,10 +159,10 @@ def main():
             return
         results, vis, _ = run_measurement(
             image,
-            plane_distance_m=config.DEFAULT_CAMERA_HEIGHT_M,
+            plane_distance_m=args.plane_distance,
             use_plane_for_scale=True,
         )
-        out_path = os.path.join(config.PROJECT_ROOT, "output_measurement.png")
+        out_path = os.path.join(args.save_dir, "output_measurement.png")
         cv2.imwrite(out_path, vis)
         print(f"结果已保存: {out_path}")
         print("圆数量:", len(results["circles"]))
@@ -163,7 +176,48 @@ def main():
         cv2.destroyAllWindows()
         return
 
-    # 2) 无参数：生成仿真图并测量
+    # 2) 实时摄像头模式
+    if args.real:
+        cap = cv2.VideoCapture(args.cam)
+        if not cap.isOpened():
+            print(f"无法打开摄像头: {args.cam}")
+            return
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, args.width)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, args.height)
+        print("实时测量已启动，按 Q 退出。")
+        frame_idx = 0
+        try:
+            while True:
+                if args.max_frames is not None and frame_idx >= args.max_frames:
+                    break
+                ret, frame = cap.read()
+                if not ret or frame is None:
+                    break
+                frame = cv2.resize(frame, (args.width, args.height))
+                results, vis, _ = run_measurement(
+                    frame,
+                    plane_distance_m=args.plane_distance,
+                    use_plane_for_scale=True,
+                )
+                cv2.putText(
+                    vis,
+                    f"circles={len(results['circles'])} rects={len(results['rectangles'])}",
+                    (10, 28),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.7,
+                    (0, 255, 0),
+                    2,
+                )
+                cv2.imshow("2025C Real Measurement", vis)
+                frame_idx += 1
+                if cv2.waitKey(1) & 0xFF in (ord("q"), ord("Q")):
+                    break
+        finally:
+            cap.release()
+            cv2.destroyAllWindows()
+        return
+
+    # 3) 无参数：生成仿真图并测量
     w, h = 640, 480
     img = np.ones((h, w, 3), dtype=np.uint8) * 240
     cv2.circle(img, (320, 240), 80, (80, 80, 80), -1)
@@ -180,10 +234,10 @@ def main():
 
     results, vis, _ = run_measurement(
         img,
-        plane_distance_m=0.5,
+        plane_distance_m=args.plane_distance if args.plane_distance else 0.5,
         use_plane_for_scale=True,
     )
-    out_path = os.path.join(config.PROJECT_ROOT, "output_sim.png")
+    out_path = os.path.join(args.save_dir, "output_sim.png")
     cv2.imwrite(out_path, vis)
     print("仿真测量结果已保存:", out_path)
     print("圆:", len(results["circles"]), "矩形:", len(results["rectangles"]))
