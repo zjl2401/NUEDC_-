@@ -7,6 +7,7 @@
 import cv2
 import numpy as np
 import time
+import argparse
 
 from config import (
     SAMPLE_RATE,
@@ -80,6 +81,13 @@ def run_recognition_loop(clf: ApplianceClassifier, active_ids: list):
 
 
 def main():
+    parser = argparse.ArgumentParser(description="2021H 用电器辨识（模拟/CSV 实采样）")
+    parser.add_argument("--csv", type=str, default=None, help="CSV 文件路径（单列电流 mA，或两列: 电流mA,电压V）")
+    parser.add_argument("--window-s", type=float, default=ANALYSIS_WINDOW, help="每次识别窗口时长（秒）")
+    parser.add_argument("--step-s", type=float, default=ANALYSIS_WINDOW, help="滑窗步长（秒）")
+    parser.add_argument("--no-window", action="store_true", help="CSV 模式不显示窗口，仅打印结果")
+    args = parser.parse_args()
+
     clf = ApplianceClassifier()
     try:
         clf.load()
@@ -88,6 +96,49 @@ def main():
     if not getattr(clf, "is_fitted", False):
         print("No model found. Running learning mode first...")
         run_learning_mode(clf)
+
+    if args.csv:
+        data = np.loadtxt(args.csv, delimiter=",")
+        if data.ndim == 1:
+            i_ma_all = data.astype(np.float32)
+            v_all = generate_voltage_reference(len(i_ma_all) / SAMPLE_RATE)
+        else:
+            i_ma_all = data[:, 0].astype(np.float32)
+            if data.shape[1] >= 2:
+                v_all = data[:, 1].astype(np.float32)
+            else:
+                v_all = generate_voltage_reference(len(i_ma_all) / SAMPLE_RATE)
+        win_n = max(1, int(args.window_s * SAMPLE_RATE))
+        step_n = max(1, int(args.step_s * SAMPLE_RATE))
+        idx = 0
+        print("CSV 实采样识别开始，按 Ctrl+C 可中断。")
+        while idx + win_n <= len(i_ma_all):
+            i_ma = i_ma_all[idx: idx + win_n]
+            v = v_all[idx: idx + win_n]
+            feats = extract_features(i_ma, v)
+            pred_id = clf.predict_single(feats)
+            pred_multi = clf.predict_multi(feats, threshold=2.5)
+            print(
+                f"[{idx/SAMPLE_RATE:7.2f}s] pred={get_appliance_name(pred_id)} "
+                f"multi={[get_appliance_name(a) for a in pred_multi]} "
+                f"Irms={feats['rms_ma']:.1f}mA PF={feats['pf']:.3f}"
+            )
+            idx += step_n
+            if not args.no_window:
+                # CSV 模式仅用于快速核验，窗口显示简化为一帧文本图
+                img = np.zeros((220, 760, 3), dtype=np.uint8)
+                img[:] = (35, 35, 40)
+                put_text_cn(img, "2021H CSV Real-Sample Recognition", 20, 35, (180, 220, 255))
+                put_text_cn(img, f"Time: {idx/SAMPLE_RATE:.2f}s", 20, 68, (200, 200, 200))
+                put_text_cn(img, f"Pred: {get_appliance_name(pred_id)}", 20, 104, (200, 255, 200))
+                put_text_cn(img, f"Irms={feats['rms_ma']:.1f}mA PF={feats['pf']:.3f}", 20, 138, (220, 220, 220))
+                put_text_cn(img, "Q: quit", 20, 178, (200, 180, 180))
+                cv2.imshow("H-Appliance Recognition", img)
+                k = cv2.waitKey(1) & 0xFF
+                if k in (ord("q"), ord("Q"), 27):
+                    break
+        cv2.destroyAllWindows()
+        return
 
     # 模拟“当前在用电器”（可改为键盘/按钮切换）
     active_ids = [2]  # 默认 2 号 LED 灯
