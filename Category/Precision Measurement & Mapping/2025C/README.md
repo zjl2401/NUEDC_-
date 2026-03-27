@@ -47,6 +47,16 @@ python main.py path/to/your_image.jpg
 
 结果保存为 `output_measurement.png`，终端打印圆/矩形的直径、边长、距离（若配置了参考尺寸或平面距离）。
 
+### 2.1 实时摄像头（实机）
+
+```bash
+# 直接实时测量，按 Q 退出
+python main.py --real --cam 0 --width 640 --height 480
+
+# 指定平面距离并限制帧数
+python main.py --real --cam 0 --plane-distance 0.5 --max-frames 500
+```
+
 ### 3. 相机标定（提高真实相机精度）
 
 将多张不同角度的棋盘格照片放入 `calibration/`，或：
@@ -78,3 +88,12 @@ python generate_sim_image.py
 - 实际部署到 Orange Pi 时，可将 `main.py` 改为从摄像头 `cv2.VideoCapture(0)` 取帧并循环测量。
 - 若需更稳的圆检测，可调节 `config.py` 中 `CIRCLE_PARAM1`、`CIRCLE_PARAM2`、`MIN_RADIUS`、`MAX_RADIUS`。
 - 多边形在 `edge_detection.detect_polygons()` 中实现，可按赛题要求接入 `main.py` 的测量流程。
+
+## 实机硬件与配置建议
+
+- **硬件**：Orange Pi + USB 摄像头 + 固定支架 + 标定棋盘格（推荐） + 标准尺寸参考物。
+- **步骤**：
+  1. 先执行 `python run_calibration.py ...` 生成 `calibration/camera_params.npz`；
+  2. 固定相机高度，确认测量平面距离（`--plane-distance`）；
+  3. 用已知尺寸物体验证误差，再微调 `config.py` 与边缘参数；
+  4. 实机运行 `python main.py --real --cam 0`，观察叠加测量结果。
