@@ -50,6 +50,23 @@ python main.py
 
 ## 扩展思路
 
-- **真实硬件**：香橙派接摄像头作 UAV 端，另一块板或本机跑小车逻辑；将 `CommChannel` 换成 socket 或 MQTT 即可实现跨设备通信。
 - **多火源**：在 `World` 中 `add_fire` 多个，小车灭完一个后根据信道中的下一个坐标继续寻路。
 - **发热物体**：若用热成像模拟，可在 `fire_detector` 中改为温度/亮度阈值或简单热源模板。
+
+## 实机硬件清单与对接说明（扩展用）
+
+当前 `main.py` 为 **纯软件仿真**。若要接入实机，建议按下述方式拆分：
+
+| 角色 | 硬件 | 软件职责 |
+|------|------|----------|
+| 空中端 | 香橙派/树莓派 + 下视摄像头（或吊舱） | 运行 OpenCV 火源检测，得到世界/图像坐标 |
+| 通信 | WiFi（ESP32/网卡）、数传、或 UART 转 LoRa | 将 `FireReport` 从内存队列换为 **socket / MQTT / 串口帧** |
+| 地面端 | 小车 MCU（STM32 等）+ 电机驱动 | 接收坐标，执行与 `ground/vehicle.py` 类似的避障与灭火 IO |
+
+**配置步骤建议**
+
+1. 先单独验证摄像头端能稳定检出红色火源（调 `config.py` 中 HSV 与 `FIRE_MIN_AREA`）。
+2. 定义简单通信协议（例如每行 `frame_id,x_mm,y_mm` 并以换行结束），在 `comm/` 中新增 `channel_serial.py` 或 `channel_socket.py` 实现与 `CommChannel` 相同的 `send/receive/tick` 语义。
+3. 地面端先打印接收坐标，再驱动电机；灭火继电器/水泵用 GPIO 或驱动板。
+4. 全链路联调时加大 `COMM_LATENCY_FRAMES` 或实网信道缓冲，观察是否丢包。
+5. **跨设备通信**：将 `CommChannel` 换成 socket/MQTT/串口帧，即可把仿真中的 `FireReport` 发到真实小车端。
