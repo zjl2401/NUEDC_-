@@ -91,6 +91,12 @@ PIXEL_TO_TILT = 0.03
 SERVO_MIN_US = 500
 SERVO_MAX_US = 2500
 
+# 香橙派 5 Pro：40 针排针的 BOARD 物理脚号（与 wiring 图一致）
+# 推荐：16=Pan信号，18=Tilt信号；GND 用 6/9/14 等，舵机电源用独立 5V 并与板子共地
+# 若脚被占用或抖动，可改成 7/11 或 13/15，并以官方引脚图为准
+PAN_PIN_BOARD = 16
+TILT_PIN_BOARD = 18
+
 # 预测
 PREDICT_FRAMES = 3
 KALMAN_PROCESS_NOISE = 0.03

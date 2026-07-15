@@ -82,8 +82,10 @@ class SoftPWMServo:
                 return
 
 
-def create_servo(use_dummy: bool = None, pan_pin: int = 7, tilt_pin: int = 11):
+def create_servo(use_dummy: bool = None, pan_pin: int = None, tilt_pin: int = None):
     if use_dummy is True or (use_dummy is None and not HAS_GPIO):
         return DummyServo()
-    return SoftPWMServo(pan_pin=pan_pin, tilt_pin=tilt_pin, pwm_freq=50)
+    pan = pan_pin if pan_pin is not None else getattr(cfg, "PAN_PIN_BOARD", 16)
+    tilt = tilt_pin if tilt_pin is not None else getattr(cfg, "TILT_PIN_BOARD", 18)
+    return SoftPWMServo(pan_pin=pan, tilt_pin=tilt, pwm_freq=50)
 

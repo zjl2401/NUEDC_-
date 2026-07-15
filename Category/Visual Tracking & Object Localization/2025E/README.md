@@ -32,7 +32,9 @@ python main.py --mode dynamic
 
 ## 运行方式（真机：摄像头 + 云台/舵机）
 
-本目录已补齐真机入口（不影响原有仿真模式），通过 `--real` 启动：
+本目录已补齐真机入口（不影响原有仿真模式），通过 `--real` 启动。
+
+**香橙派 5 Pro 接线、引脚与逐步标定**：见 **[运行说明_香橙派5Pro.md](./运行说明_香橙派5Pro.md)**。
 
 ```bash
 # 真机多目标切换：按键 1-4 锁定不同颜色目标
@@ -46,6 +48,9 @@ python main.py --mode reset --real
 
 # 真机但不接舵机/无 GPIO：只打印角度（或无 GPIO 会自动 dummy）
 python main.py --mode dynamic --real --dummy
+
+# 指定摄像头与 BOARD 引脚（香橙派 5 Pro 默认可用 16/18）
+python main.py --mode dynamic --real --camera-index 0 --pan-pin 16 --tilt-pin 18
 ```
 
 真机调通通常需要先在 `config.py` 里完成标定：
